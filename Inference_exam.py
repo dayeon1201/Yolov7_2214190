@@ -11,8 +11,10 @@ img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 # ONNX 모델 설정
 w = "yolov7-tiny.onnx"
 cuda = True
-providers = ['CUDAExecutionProvider', 'CPUExecutionProvider'] if cuda else ['CPUExecutionProvider']
+providers = ['CUDAExecutionProvider',
+             'CPUExecutionProvider'] if cuda else ['CPUExecutionProvider']
 session = ort.InferenceSession(w, providers=providers)
+
 
 def letterbox(im, new_shape=(640, 640), color=(114, 114, 114), auto=True, scaleup=True, stride=32):
     shape = im.shape[:2]  # 현재 이미지 크기 [높이, 너비]
@@ -36,8 +38,10 @@ def letterbox(im, new_shape=(640, 640), color=(114, 114, 114), auto=True, scaleu
         im = cv2.resize(im, new_unpad, interpolation=cv2.INTER_LINEAR)
     top, bottom = int(round(dh - 0.1)), int(round(dh + 0.1))
     left, right = int(round(dw - 0.1)), int(round(dw + 0.1))
-    im = cv2.copyMakeBorder(im, top, bottom, left, right, cv2.BORDER_CONSTANT, value=color)
+    im = cv2.copyMakeBorder(im, top, bottom, left, right,
+                            cv2.BORDER_CONSTANT, value=color)
     return im, r, (dw, dh)
+
 
 # 이미지 전처리
 image, ratio, dwdh = letterbox(img, auto=False)
@@ -54,22 +58,20 @@ outname = [i.name for i in session.get_outputs()]
 outputs = session.run(outname, {inname[0]: image})[0]
 
 # 결과 처리 및 시각화
-names = ['person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus', 'train', 'truck', 'boat', 'traffic light', 
-         'fire hydrant', 'stop sign', 'parking meter', 'bench', 'bird', 'cat', 'dog', 'horse', 'sheep', 'cow', 
-         'elephant', 'bear', 'zebra', 'giraffe', 'backpack', 'umbrella', 'handbag', 'tie', 'suitcase', 'frisbee', 
-         'skis', 'snowboard', 'sports ball', 'kite', 'baseball bat', 'baseball glove', 'skateboard', 'surfboard', 
-         'tennis racket', 'bottle', 'wine glass', 'cup', 'fork', 'knife', 'spoon', 'bowl', 'banana', 'apple', 
-         'sandwich', 'orange', 'broccoli', 'carrot', 'hot dog', 'pizza', 'donut', 'cake', 'chair', 'couch', 
-         'potted plant', 'bed', 'dining table', 'toilet', 'tv', 'laptop', 'mouse', 'remote', 'keyboard', 'cell phone', 
-         'microwave', 'oven', 'toaster', 'sink', 'refrigerator', 'book', 'clock', 'vase', 'scissors', 'teddy bear', 
+names = ['person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus', 'train', 'truck', 'boat', 'traffic light',
+         'fire hydrant', 'stop sign', 'parking meter', 'bench', 'bird', 'cat', 'dog', 'horse', 'sheep', 'cow',
+         'elephant', 'bear', 'zebra', 'giraffe', 'backpack', 'umbrella', 'handbag', 'tie', 'suitcase', 'frisbee',
+         'skis', 'snowboard', 'sports ball', 'kite', 'baseball bat', 'baseball glove', 'skateboard', 'surfboard',
+         'tennis racket', 'bottle', 'wine glass', 'cup', 'fork', 'knife', 'spoon', 'bowl', 'banana', 'apple',
+         'sandwich', 'orange', 'broccoli', 'carrot', 'hot dog', 'pizza', 'donut', 'cake', 'chair', 'couch',
+         'potted plant', 'bed', 'dining table', 'toilet', 'tv', 'laptop', 'mouse', 'remote', 'keyboard', 'cell phone',
+         'microwave', 'oven', 'toaster', 'sink', 'refrigerator', 'book', 'clock', 'vase', 'scissors', 'teddy bear',
          'hair drier', 'toothbrush']
 colors = {name: [random.randint(0, 255) for _ in range(3)] for name in names}
 
 ori_images = [img.copy()]
 
 for i, (batch_id, x0, y0, x1, y1, cls_id, score) in enumerate(outputs):
-    if score < 0.5:  # 일반적으로 낮은 점수의 검출을 필터링
-        continue
     image = ori_images[int(batch_id)]
     box = np.array([x0, y0, x1, y1])
     box -= np.array(dwdh * 2)
@@ -80,7 +82,8 @@ for i, (batch_id, x0, y0, x1, y1, cls_id, score) in enumerate(outputs):
     name = names[cls_id] + ' ' + str(score)
     color = colors[names[cls_id]]
     cv2.rectangle(image, box[:2], box[2:], color, 2)
-    cv2.putText(image, name, (box[0], box[1] - 2), cv2.FONT_HERSHEY_SIMPLEX, 0.75, [225, 255, 255], thickness=2)
+    cv2.putText(image, name, (box[0], box[1] - 2),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.75, [225, 255, 255], thickness=2)
 
 print('[INFO] draw all detected boxes....!')
 
